@@ -10,6 +10,21 @@ router.get("/", async (req, res) => {
     return res.status(400).json({ error: "Missing eventId or startDate" });
   }
 
+  const date = new Date(startDate);
+  const games = await getScoreboardDataForDate(date);
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      "Fetched games:",
+      games.map((g) => g.id)
+    );
+  }
+
+  const game = games.find((g) => g.id === eventId);
+  if (process.env.NODE_ENV !== "production" && !game) {
+    console.warn(`Game not found for eventId ${eventId}`);
+    return res.status(404).json({ error: "Game not found" });
+  }
   const start = new Date(startDate);
 
   try {

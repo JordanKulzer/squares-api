@@ -4,12 +4,20 @@ const axios = require("axios");
 async function getScoreboardDataForDate(date) {
   const dateParam = date.toISOString().split("T")[0].replace(/-/g, "");
 
-  try {
-    const res = await axios.get(
-      `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dateParam}`
-    );
+  const url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dateParam}`;
 
-    return res.data.events || [];
+  try {
+    const res = await axios.get(url);
+
+    if (
+      process.env.NODE_ENV !== "production" &&
+      (!res.data || !Array.isArray(res.data.events))
+    ) {
+      console.warn(`No events found for ${dateParam}`);
+      return [];
+    }
+
+    return res.data.events;
   } catch (err) {
     console.error(`Failed to fetch scoreboard for ${dateParam}:`, err.message);
     return [];
