@@ -114,6 +114,7 @@ router.get("/", async (req, res) => {
 
       // Team display info
       homeTeam: {
+        ...home?.team,
         name: home?.team?.name,
         location: home?.team?.location,
         displayName: home?.team?.displayName,
@@ -123,6 +124,7 @@ router.get("/", async (req, res) => {
       },
 
       awayTeam: {
+        ...away?.team,
         name: away?.team?.name,
         location: away?.team?.location,
         displayName: away?.team?.displayName,
