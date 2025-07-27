@@ -103,6 +103,8 @@ router.get("/", async (req, res) => {
       source,
       date: comp.date,
       league: comp?.league?.abbreviation ?? "unknown", // "NFL" or "NCAAF"
+      rawHome: home,
+      rawAway: away,
 
       // For display
       fullTeam1: away?.team?.displayName,
