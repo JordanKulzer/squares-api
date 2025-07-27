@@ -32,6 +32,8 @@ router.get("/", async (req, res) => {
           homeLogo: home?.team?.logo,
           awayLogo: away?.team?.logo,
           status: comp.status?.type?.shortDetail,
+          homeFullName: home.team.displayName,
+          awayFullName: away.team.displayName,
         });
       });
     }

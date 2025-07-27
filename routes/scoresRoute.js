@@ -102,10 +102,31 @@ router.get("/", async (req, res) => {
       id: eventId,
       source,
       date: comp.date,
-      homeTeam: home?.team?.displayName,
-      awayTeam: away?.team?.displayName,
-      homeLogo: home?.team?.logo,
-      awayLogo: away?.team?.logo,
+      league: comp?.league?.abbreviation ?? "unknown", // "NFL" or "NCAAF"
+
+      // For display
+      fullTeam1: away?.team?.displayName,
+      fullTeam2: home?.team?.displayName,
+
+      // Team display info
+      homeTeam: {
+        name: home?.team?.name,
+        location: home?.team?.location,
+        displayName: home?.team?.displayName,
+        shortDisplayName: home?.team?.shortDisplayName,
+        abbreviation: home?.team?.abbreviation,
+        logo: home?.team?.logo,
+      },
+
+      awayTeam: {
+        name: away?.team?.name,
+        location: away?.team?.location,
+        displayName: away?.team?.displayName,
+        shortDisplayName: away?.team?.shortDisplayName,
+        abbreviation: away?.team?.abbreviation,
+        logo: away?.team?.logo,
+      },
+
       quarterScores,
     });
   } catch (err) {
