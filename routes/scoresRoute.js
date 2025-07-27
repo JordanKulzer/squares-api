@@ -108,6 +108,10 @@ router.get("/", async (req, res) => {
       fullTeam1: away?.team?.displayName,
       fullTeam2: home?.team?.displayName,
 
+      // ✅ Add these lines for NCAA abbreviated axis labels
+      team1_abbr: away?.team?.abbreviation,
+      team2_abbr: home?.team?.abbreviation,
+
       // Team display info
       homeTeam: {
         name: home?.team?.name,
