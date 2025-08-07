@@ -32,11 +32,11 @@ router.get("/", async (req, res) => {
     if (found) source = "ncaaf";
   }
 
-  // Final fallback: use ESPN summary API
-  if (!found) {
+  const fallbackLeagues = ["college-football", "nfl"];
+  for (const league of fallbackLeagues) {
     try {
       const summaryRes = await axios.get(
-        `https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=${eventId}`
+        `https://site.api.espn.com/apis/site/v2/sports/football/${league}/summary?event=${eventId}`
       );
 
       const competition =
@@ -48,14 +48,16 @@ router.get("/", async (req, res) => {
         );
 
       if (competition) {
-        console.log("✅ Found competition in summary fallback:", competition);
+        // console.log(
+        //   `✅ Found competition in summary fallback (${league}):`,
+        //   competition
+        // );
         found = { competitions: [competition] };
         source = "summary";
-      } else {
-        console.warn("❌ Competition not found in summary response");
+        break; // exit the loop early
       }
     } catch (err) {
-      console.warn("Final fallback (summary) failed:", err.message);
+      console.warn(`❌ ${league} summary fallback failed:`, err.message);
     }
   }
 
@@ -78,8 +80,22 @@ router.get("/", async (req, res) => {
         return isNaN(val) ? null : val;
       }) ?? [];
 
-    const homeScores = parseLineScores(home);
-    const awayScores = parseLineScores(away);
+    const toCumulative = (arr) => {
+      const result = [];
+      arr.reduce((sum, val, i) => {
+        const next = (sum ?? 0) + (val ?? 0);
+        result[i] = next;
+        return next;
+      }, 0);
+      return result;
+    };
+
+    const homeRaw = parseLineScores(home); // e.g., [0, 7, 6, 7]
+    const awayRaw = parseLineScores(away); // e.g., [14, 7, 6, 7]
+
+    const homeScores = toCumulative(homeRaw); // [0, 7, 13, 20]
+    const awayScores = toCumulative(awayRaw); // [14, 21, 27, 34]
+    console.log("homeScores:", homeScores, "/ awayScores: ", awayScores);
 
     const quarterScores = Array.from({
       length: Math.max(homeScores.length, awayScores.length, 4),
