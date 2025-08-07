@@ -1,4 +1,3 @@
-// routes/scoresRoute.js
 const express = require("express");
 const axios = require("axios");
 const getScoreboardDataForDate = require("../utils/getScoreboardData");
@@ -8,6 +7,7 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   const { eventId, startDate } = req.query;
+
   if (!eventId || !startDate) {
     return res.status(400).json({ error: "Missing eventId or startDate" });
   }
@@ -25,13 +25,14 @@ router.get("/", async (req, res) => {
   found = games.find((g) => g.id === eventId);
   if (found) source = "nfl";
 
-  // Try NCAA scoreboard next
+  // Try NCAA scoreboard if not found
   if (!found) {
     games = await getNcaafScoreboardDataForDate(parsedDate);
     found = games.find((g) => g.id === eventId);
     if (found) source = "ncaaf";
   }
 
+  // Final fallback: use ESPN summary API
   if (!found) {
     try {
       const summaryRes = await axios.get(
@@ -48,10 +49,7 @@ router.get("/", async (req, res) => {
 
       if (competition) {
         console.log("✅ Found competition in summary fallback:", competition);
-
-        found = {
-          competitions: [competition],
-        };
+        found = { competitions: [competition] };
         source = "summary";
       } else {
         console.warn("❌ Competition not found in summary response");
@@ -69,11 +67,19 @@ router.get("/", async (req, res) => {
   try {
     const comp =
       found.competitions?.[0] || found.competition?.[0] || found.competition;
-    const home = comp.competitors.find((c) => c.homeAway === "home");
-    const away = comp.competitors.find((c) => c.homeAway === "away");
 
-    const homeScores = home?.linescores?.map((s) => s.value) || [];
-    const awayScores = away?.linescores?.map((s) => s.value) || [];
+    const home = comp?.competitors?.find((c) => c.homeAway === "home");
+    const away = comp?.competitors?.find((c) => c.homeAway === "away");
+
+    // Robust score parsing
+    const parseLineScores = (team) =>
+      team?.linescores?.map((s) => {
+        const val = parseInt(s.displayValue, 10);
+        return isNaN(val) ? null : val;
+      }) ?? [];
+
+    const homeScores = parseLineScores(home);
+    const awayScores = parseLineScores(away);
 
     const quarterScores = Array.from({
       length: Math.max(homeScores.length, awayScores.length, 4),
@@ -81,20 +87,21 @@ router.get("/", async (req, res) => {
       const homeQ = homeScores[i] ?? null;
       const awayQ = awayScores[i] ?? null;
 
+      let winner = null;
+      if (homeQ != null && awayQ != null) {
+        winner =
+          homeQ > awayQ ? home?.team?.displayName : away?.team?.displayName;
+      } else if (homeQ != null) {
+        winner = home?.team?.displayName;
+      } else if (awayQ != null) {
+        winner = away?.team?.displayName;
+      }
+
       return {
-        quarter: `${i + 1}Q`,
+        quarter: `Q${i + 1}`,
         home: homeQ,
         away: awayQ,
-        winner:
-          homeQ != null && awayQ != null
-            ? homeQ > awayQ
-              ? home.team.displayName
-              : away.team.displayName
-            : homeQ == null && awayQ == null
-            ? null
-            : homeQ != null
-            ? home.team.displayName
-            : away.team.displayName,
+        winner,
       };
     });
 
@@ -102,43 +109,31 @@ router.get("/", async (req, res) => {
       id: eventId,
       source,
       date: comp.date,
-      league: comp?.league?.abbreviation ?? "unknown", // "NFL" or "NCAAF"
+      league: comp?.league?.abbreviation ?? "unknown",
+
       rawHome: home,
       rawAway: away,
 
-      // For display
+      // Display mappings
       fullTeam1: away?.team?.displayName,
       fullTeam2: home?.team?.displayName,
-
-      // ✅ Add these lines for NCAA abbreviated axis labels
       team1_abbr: away?.team?.abbreviation,
       team2_abbr: home?.team?.abbreviation,
 
-      // Team display info
       homeTeam: {
         ...home?.team,
-        name: home?.team?.name,
-        location: home?.team?.location,
-        displayName: home?.team?.displayName,
-        shortDisplayName: home?.team?.shortDisplayName,
-        abbreviation: home?.team?.abbreviation,
         logo: home?.team?.logo,
       },
-
       awayTeam: {
         ...away?.team,
-        name: away?.team?.name,
-        location: away?.team?.location,
-        displayName: away?.team?.displayName,
-        shortDisplayName: away?.team?.shortDisplayName,
-        abbreviation: away?.team?.abbreviation,
         logo: away?.team?.logo,
       },
 
       quarterScores,
+      completed: comp?.status?.type?.completed ?? false,
     });
   } catch (err) {
-    console.error("Parsing error:", err.message);
+    console.error("❌ Parsing error:", err.message);
     res.status(500).json({ error: "Failed to parse game data" });
   }
 });
