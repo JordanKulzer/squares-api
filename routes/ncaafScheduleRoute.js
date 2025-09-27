@@ -12,12 +12,16 @@ router.get("/", async (req, res) => {
 
   const startDate = new Date(startDateStr);
   const allGames = [];
+  const currentDate = new Date(startDate);
 
   try {
     for (let i = 0; i < 7; i++) {
-      const currentDate = new Date(startDate);
-      currentDate.setDate(startDate.getDate() + i);
-
+      // const currentDate = new Date(startDate);
+      // currentDate.setDate(currentDate.getDate() + i);
+      console.log(
+        "Fetching games for date:",
+        currentDate.toISOString().split("T")[0]
+      );
       const events = await getNcaafScoreboardDataForDate(currentDate);
       events.forEach((event) => {
         const comp = event.competitions[0];
@@ -34,6 +38,7 @@ router.get("/", async (req, res) => {
           status: comp.status?.type?.shortDetail,
         });
       });
+      currentDate.setDate(currentDate.getDate() + 1);
     }
 
     res.json(allGames);

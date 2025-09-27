@@ -16,6 +16,6 @@ app.get("/", (req, res) => {
   res.send("API is running. Try /schedule or /ncaaf/schedule");
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ API running at http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`✅ API running at http://0.0.0.0:${PORT}`);
 });

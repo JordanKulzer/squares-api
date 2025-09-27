@@ -6,7 +6,8 @@ const getNcaafScoreboardDataForDate = require("../utils/getNcaafScoreboardData")
 const router = express.Router();
 
 router.get("/", async (req, res) => {
-  const { eventId, startDate } = req.query;
+  const { eventId, startDate, league } = req.query;
+  console.log("Requested league:", league);
 
   if (!eventId || !startDate) {
     return res.status(400).json({ error: "Missing eventId or startDate" });
@@ -18,25 +19,21 @@ router.get("/", async (req, res) => {
   }
 
   let found = null;
-  let source = "none";
+  let source = league.toLowerCase();
 
-  // Try NFL scoreboard first
-  let games = await getScoreboardDataForDate(parsedDate);
-  found = games.find((g) => g.id === eventId);
-  if (found) source = "nfl";
-
-  // Try NCAA scoreboard if not found
-  if (!found) {
+  let games = [];
+  if (league.toUpperCase() === "NCAAF") {
     games = await getNcaafScoreboardDataForDate(parsedDate);
-    found = games.find((g) => g.id === eventId);
-    if (found) source = "ncaaf";
+  } else {
+    games = await getScoreboardDataForDate(parsedDate);
   }
+  found = games.find((g) => g.id === eventId);
 
   const fallbackLeagues = ["college-football", "nfl"];
-  for (const league of fallbackLeagues) {
+  for (const endpoint of fallbackLeagues) {
     try {
       const summaryRes = await axios.get(
-        `https://site.api.espn.com/apis/site/v2/sports/football/${league}/summary?event=${eventId}`
+        `https://site.api.espn.com/apis/site/v2/sports/football/${endpoint}/summary?event=${eventId}`
       );
 
       const competition =
@@ -57,7 +54,9 @@ router.get("/", async (req, res) => {
         break; // exit the loop early
       }
     } catch (err) {
-      console.warn(`❌ ${league} summary fallback failed:`, err.message);
+      if (err.response?.status !== 404) {
+        console.warn(`❌ ${endpoint} summary fallback failed:`, err.message);
+      }
     }
   }
 
@@ -125,7 +124,7 @@ router.get("/", async (req, res) => {
       id: eventId,
       source,
       date: comp.date,
-      league: comp?.league?.abbreviation ?? "unknown",
+      league: league.toUpperCase(),
 
       rawHome: home,
       rawAway: away,
@@ -148,6 +147,7 @@ router.get("/", async (req, res) => {
       quarterScores,
       completed: comp?.status?.type?.completed ?? false,
     });
+    console.log("Responding with scores for", eventId);
   } catch (err) {
     console.error("❌ Parsing error:", err.message);
     res.status(500).json({ error: "Failed to parse game data" });
