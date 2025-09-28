@@ -28,7 +28,8 @@ router.get("/", async (req, res) => {
     games = await getScoreboardDataForDate(parsedDate);
   }
   found = games.find((g) => g.id === eventId);
-
+  let drives = [];
+  let state = "";
   const fallbackLeagues = ["college-football", "nfl"];
   for (const endpoint of fallbackLeagues) {
     try {
@@ -44,11 +45,11 @@ router.get("/", async (req, res) => {
           (c) => String(c.id) === String(eventId)
         );
 
+      drives = summaryRes.data?.drives?.previous ?? [];
+
       if (competition) {
-        // console.log(
-        //   `✅ Found competition in summary fallback (${league}):`,
-        //   competition
-        // );
+        state = competition?.status?.type?.state?.toLowerCase() || "unknown";
+
         found = { competitions: [competition] };
         source = "summary";
         break; // exit the loop early
@@ -68,6 +69,10 @@ router.get("/", async (req, res) => {
   try {
     const comp =
       found.competitions?.[0] || found.competition?.[0] || found.competition;
+
+    if (!state) {
+      state = comp?.status?.type?.state?.toLowerCase() || "unknown";
+    }
 
     const home = comp?.competitors?.find((c) => c.homeAway === "home");
     const away = comp?.competitors?.find((c) => c.homeAway === "away");
@@ -120,6 +125,29 @@ router.get("/", async (req, res) => {
       };
     });
 
+    let completedQuarters = 0;
+    let lastPeriod = 0;
+
+    drives.forEach((d, i) => {
+      const endPeriod = Number(d?.end?.period?.number) || null;
+      const endClock = d?.end?.clock?.displayValue;
+
+      if (endPeriod) {
+        // If we see a period jump (e.g., from 1 → 2), mark the previous one as completed
+        if (endPeriod > lastPeriod) {
+          completedQuarters = Math.max(completedQuarters, endPeriod - 1);
+        }
+
+        // Still allow the strict 0:00 case (when available)
+        if (endClock === "0:00") {
+          completedQuarters = Math.max(completedQuarters, endPeriod);
+        }
+
+        lastPeriod = endPeriod;
+      }
+    });
+
+    console.log("state: ", state);
     res.json({
       id: eventId,
       source,
@@ -145,7 +173,9 @@ router.get("/", async (req, res) => {
       },
 
       quarterScores,
+      completedQuarters,
       completed: comp?.status?.type?.completed ?? false,
+      gameState: state,
     });
     console.log("Responding with scores for", eventId);
   } catch (err) {
