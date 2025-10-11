@@ -1,7 +1,7 @@
 const express = require("express");
 const axios = require("axios");
-const getScoreboardDataForDate = require("../utils/getScoreboardData");
-const getNcaafScoreboardDataForDate = require("../utils/getNcaafScoreboardData");
+const getScoreboardDataForDate = require("../../utils/espn/getScoreboardData");
+const getNcaafScoreboardDataForDate = require("../../utils/espn/getNcaafScoreboardData");
 
 const router = express.Router();
 

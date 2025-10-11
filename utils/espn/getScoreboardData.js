@@ -1,4 +1,4 @@
-// utils/getScoreboardData.js
+// utils/espn/getScoreboardData.js
 const axios = require("axios");
 
 async function getScoreboardDataForDate(date) {

@@ -1,6 +1,6 @@
-// routes/ncaafScheduleRoute.js
+// routes/espn/ncaafScheduleRoute.js
 const express = require("express");
-const getNcaafScoreboardDataForDate = require("../utils/getNcaafScoreboardData");
+const getNcaafScoreboardDataForDate = require("../../utils/espn/getNcaafScoreboardData");
 
 const router = express.Router();
 

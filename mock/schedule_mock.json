@@ -1,0 +1,22 @@
+[
+  {
+    "id": "17964",
+    "league": "NCAAF",
+    "date": "2025-10-04T17:00:00Z",
+    "homeTeam": "Alabama",
+    "awayTeam": "Vanderbilt",
+    "homeLogo": "",
+    "awayLogo": "",
+    "status": "FT"
+  },
+  {
+    "id": "9733",
+    "league": "NFL",
+    "date": "2025-10-05T18:00:00Z",
+    "homeTeam": "Dallas Cowboys",
+    "awayTeam": "Philadelphia Eagles",
+    "homeLogo": "",
+    "awayLogo": "",
+    "status": "NS"
+  }
+]

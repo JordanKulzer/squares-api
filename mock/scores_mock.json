@@ -1,0 +1,37 @@
+{
+  "id": "17964",
+  "league": "NCAAF",
+  "fullTeam1": "Vanderbilt",
+  "fullTeam2": "Alabama",
+  "team1_abbr": "VAN",
+  "team2_abbr": "ALA",
+  "quarterScores": [
+    {
+      "quarter": "Q1",
+      "home": 0,
+      "away": 7,
+      "winner": "Vanderbilt"
+    },
+    {
+      "quarter": "Q2",
+      "home": 14,
+      "away": 7,
+      "winner": "Alabama"
+    },
+    {
+      "quarter": "Q3",
+      "home": 6,
+      "away": 0,
+      "winner": "Alabama"
+    },
+    {
+      "quarter": "Q4",
+      "home": 10,
+      "away": 0,
+      "winner": "Alabama"
+    }
+  ],
+  "completedQuarters": 4,
+  "completed": true,
+  "gameState": "FT"
+}

@@ -1,4 +1,4 @@
-// utils/getNcaafScoreboardDataForDate.js
+// utils/espn/getNcaafScoreboardDataForDate.js
 const axios = require("axios");
 
 async function getNcaafScoreboardDataForDate(date) {

@@ -1,6 +1,6 @@
-// routes/scheduleRoute.js
+// routes/espn/scheduleRoute.js
 const express = require("express");
-const getScoreboardDataForDate = require("../utils/getScoreboardData");
+const getScoreboardDataForDate = require("../../utils/espn/getScoreboardData");
 
 const router = express.Router();
 
