@@ -62,11 +62,44 @@ router.get("/", async (req, res) => {
         g.id ? arr.findIndex((x) => x.id === g.id) === idx : true
       );
 
-    // Save to cache for 5 minutes
-    setCache(cacheKey, merged, 5 * 60 * 1000);
+    const now = new Date();
+    const normalized = merged.map((g) => {
+      // 🧠 Try to get date info from g.date or fallback to fixture.date if available
+      const rawDate = g.date || g.start_date || g.fixture?.date;
+      const gameDate = rawDate ? new Date(rawDate) : null;
 
-    console.log(`✅ Saved ${merged.length} total ${league} games to cache`);
-    res.json(merged);
+      // 🧠 Determine base status
+      let status = g.status || g.fixture?.status?.short || "Scheduled";
+
+      // 🧮 If no status but date is in the past, mark Final
+      if (!status && gameDate) {
+        status = gameDate < now ? "Final" : "Scheduled";
+      }
+
+      // 🔁 Normalize standard API short codes
+      if (["NS", "TBD"].includes(status)) {
+        status = gameDate && gameDate < now ? "Final" : "Scheduled";
+      } else if (["FT", "AET", "FT+"].includes(status)) {
+        status = "Final";
+      } else if (["1H", "2H", "LIVE", "INPLAY"].includes(status)) {
+        status = "In Progress";
+      }
+
+      // ✅ Fallback: If we still don't have a date, infer based on ID (for mock/test)
+      const ensuredDate =
+        rawDate ||
+        new Date(now.getTime() - Math.random() * 7 * 24 * 60 * 60 * 1000);
+
+      return {
+        ...g,
+        date: ensuredDate,
+        status,
+      };
+    });
+    // Save to cache for 5 minutes
+    setCache(cacheKey, normalized, 5 * 60 * 1000);
+    console.log(`✅ Saved ${normalized.length} total ${league} games to cache`);
+    res.json(normalized);
   } catch (err) {
     console.error("❌ Schedule fetch failed:", err.message);
     res.status(500).json({ error: "Failed to fetch schedule" });

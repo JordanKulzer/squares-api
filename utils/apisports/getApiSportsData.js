@@ -31,7 +31,6 @@ async function getApiSportsData(leagueType, date) {
       return [];
     }
 
-    // ✅ Correct field names according to API-Sports response
     return games.map((g) => ({
       id: String(
         g.id ||
@@ -46,10 +45,9 @@ async function getApiSportsData(leagueType, date) {
       homeLogo: g.teams?.home?.logo || "",
       awayLogo: g.teams?.away?.logo || "",
       status:
-        g.status?.short ||
-        g.status?.long ||
+        g.game?.status?.short ||
         g.fixture?.status?.short ||
-        g.fixture?.status?.long ||
+        g.game?.status?.long ||
         "Scheduled",
     }));
   } catch (err) {
