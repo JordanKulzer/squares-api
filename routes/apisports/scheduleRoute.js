@@ -96,10 +96,19 @@ router.get("/", async (req, res) => {
         status,
       };
     });
+
+    // ✅ 4️⃣ Filter out completed games
+    const upcomingOrLive = normalized.filter(
+      (g) => g.status !== "Final" && g.status !== "Postponed"
+    );
+
     // Save to cache for 5 minutes
-    setCache(cacheKey, normalized, 5 * 60 * 1000);
-    console.log(`✅ Saved ${normalized.length} total ${league} games to cache`);
-    res.json(normalized);
+    setCache(cacheKey, upcomingOrLive, 5 * 60 * 1000);
+    console.log(
+      `✅ Saved ${upcomingOrLive.length}/${normalized.length} non-final ${league} games to cache`
+    );
+
+    res.json(upcomingOrLive);
   } catch (err) {
     console.error("❌ Schedule fetch failed:", err.message);
     res.status(500).json({ error: "Failed to fetch schedule" });
