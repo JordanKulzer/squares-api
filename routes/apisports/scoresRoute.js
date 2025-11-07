@@ -16,79 +16,60 @@ router.get("/", async (req, res) => {
   if (cached) return res.json(cached);
 
   try {
-    console.log("🔍 Fetching API-Sports game id:", eventId, "league:", league);
-
+    console.log("📊 Fetching game", eventId, "league:", league);
     const { data } = await axios.get(`${BASE_URL}/games`, {
       headers: { "x-apisports-key": API_KEY },
       params: { id: eventId },
+      timeout: 8000,
     });
 
     const gameData = data.response?.[0];
-    if (!gameData) return res.status(404).json({ error: "Game not found" });
+    if (!gameData) {
+      console.warn("⚠️ No game data from API-Sports for", eventId);
+      return res.status(404).json({ error: "Game not found" });
+    }
 
-    // 🧮 Convert per-quarter → cumulative
-    const home = gameData.scores?.home || {};
-    const away = gameData.scores?.away || {};
-    const quarters = [
-      "quarter_1",
-      "quarter_2",
-      "quarter_3",
-      "quarter_4",
-      "overtime",
-    ];
+    const team1 = gameData.teams?.away || {};
+    const team2 = gameData.teams?.home || {};
+    const scores = gameData.scores || {};
+    const home = scores.home || {};
+    const away = scores.away || {};
 
-    let runningHome = 0;
-    let runningAway = 0;
-
-    const quarterScores = quarters
-      .map((qKey, i) => {
-        const qNum = i < 4 ? `Q${i + 1}` : "OT";
-        const homeScore = home[qKey];
-        const awayScore = away[qKey];
-        if (homeScore == null && awayScore == null) return null;
-
-        runningHome += homeScore ?? 0;
-        runningAway += awayScore ?? 0;
-
-        return {
-          quarter: qNum,
-          home: runningHome,
-          away: runningAway,
-          winner:
-            runningHome > runningAway
-              ? gameData.teams.home.name
-              : runningAway > runningHome
-              ? gameData.teams.away.name
-              : null,
-        };
-      })
-      .filter(Boolean);
-
-    const completedQuarters = quarterScores.length;
-    const status = gameData.status?.short;
-    const isFinal = ["FT", "AOT"].includes(status);
-    const hasAllQuarters = completedQuarters >= 4;
-    const completed = isFinal || hasAllQuarters;
+    // Build at least one entry so the frontend resolves loading
+    const quarterScores = [];
+    if (home.points != null || away.points != null) {
+      quarterScores.push({
+        quarter: "Total",
+        home: home.points ?? 0,
+        away: away.points ?? 0,
+        winner:
+          (home.points ?? 0) > (away.points ?? 0)
+            ? team2.name
+            : (away.points ?? 0) > (home.points ?? 0)
+            ? team1.name
+            : null,
+      });
+    }
 
     const response = {
-      id: String(gameData.id),
+      id: String(gameData.id || eventId),
       date: gameData.date,
       league,
-      fullTeam1: gameData.teams.away.name,
-      fullTeam2: gameData.teams.home.name,
-      team1_abbr: gameData.teams.away.code,
-      team2_abbr: gameData.teams.home.code,
+      fullTeam1: team1.name,
+      fullTeam2: team2.name,
       quarterScores,
-      completedQuarters,
-      completed,
-      gameState: status || "",
+      completedQuarters: quarterScores.length,
+      completed: ["FT", "AOT"].includes(gameData.status?.short),
+      gameState: gameData.status?.short || "",
     };
 
     setCache(cacheKey, response, 60 * 1000);
     res.json(response);
   } catch (err) {
     console.error("❌ Scores fetch failed:", err.response?.data || err.message);
-    res.status(500).json({ error: "Failed to fetch game" });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch game", details: err.message });
   }
 });
 
