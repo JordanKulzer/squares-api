@@ -33,9 +33,9 @@ async function getApiSportsData(leagueType, date) {
 
     return games.map((g) => ({
       id: String(
-        g.id ||
+        g.game?.id ||
           g.fixture?.id ||
-          g.game?.id ||
+          g.id ||
           Math.random().toString(36).slice(2)
       ),
       date: g.date || g.fixture?.date || g.game?.date?.date,
