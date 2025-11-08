@@ -21,11 +21,12 @@ router.get("/", async (req, res) => {
     const year = now.getFullYear();
     const { data } = await axios.get(`${BASE_URL}/games`, {
       headers: { "x-apisports-key": API_KEY },
-      params: {
-        id: eventId,
-        league: league.toUpperCase() === "NCAAF" ? 2 : 1,
-        season: year,
-      },
+      params: eventId
+        ? { id: eventId }
+        : {
+            league: league.toUpperCase() === "NCAAF" ? 2 : 1,
+            season: year,
+          },
       timeout: 8000,
     });
 
