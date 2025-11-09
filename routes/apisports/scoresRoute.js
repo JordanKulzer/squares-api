@@ -42,17 +42,38 @@ router.get("/", async (req, res) => {
     const home = scores.home || {};
     const away = scores.away || {};
 
-    // Build at least one entry so the frontend resolves loading
+    // Build quarter-by-quarter array
+    const quarterKeys = [
+      "quarter_1",
+      "quarter_2",
+      "quarter_3",
+      "quarter_4",
+      "overtime",
+    ];
     const quarterScores = [];
-    if (home.points != null || away.points != null) {
+    let runningHome = 0;
+    let runningAway = 0;
+
+    for (const key of quarterKeys) {
+      const hVal = home[key];
+      const aVal = away[key];
+
+      // skip empty quarters
+      if (hVal == null && aVal == null) continue;
+
+      runningHome += hVal ?? 0;
+      runningAway += aVal ?? 0;
+
+      const label = key === "overtime" ? "OT" : key.replace("quarter_", "Q");
+
       quarterScores.push({
-        quarter: "Total",
-        home: home.points ?? 0,
-        away: away.points ?? 0,
+        quarter: label,
+        home: runningHome,
+        away: runningAway,
         winner:
-          (home.points ?? 0) > (away.points ?? 0)
+          runningHome > runningAway
             ? team2.name
-            : (away.points ?? 0) > (home.points ?? 0)
+            : runningAway > runningHome
             ? team1.name
             : null,
       });

@@ -76,12 +76,16 @@ router.get("/", async (req, res) => {
         status = gameDate < now ? "Final" : "Scheduled";
       }
 
-      // 🔁 Normalize standard API short codes
+      // 🔁 Normalize standard API short codes (API-Sports)
       if (["NS", "TBD"].includes(status)) {
         status = gameDate && gameDate < now ? "Final" : "Scheduled";
-      } else if (["FT", "AET", "FT+"].includes(status)) {
+      } else if (
+        ["FT", "AOT", "AET", "FT+", "AP", "CAN", "PST"].includes(status)
+      ) {
         status = "Final";
-      } else if (["1H", "2H", "LIVE", "INPLAY"].includes(status)) {
+      } else if (
+        ["1Q", "2Q", "3Q", "4Q", "OT", "LIVE", "INPLAY"].includes(status)
+      ) {
         status = "In Progress";
       }
 
