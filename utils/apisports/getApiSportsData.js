@@ -7,17 +7,11 @@ const API_KEY = process.env.FOOTBALL_API_KEY;
 /**
  * Fetch games from API-Sports (NFL or NCAAF)
  * @param {string} leagueType - "NFL" or "NCAAF"
- * @param {Date} date - JavaScript Date object
+ * @param {string} dateStr - Calendar day string in YYYY-MM-DD (local date from client)
  */
-async function getApiSportsData(leagueType, date) {
-  // stay strictly local (ignore UTC)
-  const localYear = date.getFullYear();
-  const localMonth = date.getMonth();
-  const localDay = date.getDate();
-
-  // midnight local time so ISO date matches the local calendar day
-  const localMidnight = new Date(localYear, localMonth, localDay, 0, 0, 0);
-  const d = localMidnight.toISOString().split("T")[0];
+async function getApiSportsData(leagueType, dateStr) {
+  // 👇 Client already sends the correct local date string
+  const d = dateStr;
 
   const leagueIds = { NFL: 1, NCAAF: 2 };
   const leagueId = leagueIds[leagueType.toUpperCase()] || 1;
@@ -29,7 +23,7 @@ async function getApiSportsData(leagueType, date) {
     });
 
     const games = res.data?.response ?? [];
-    console.log(`📊 API-Sports returned ${games.length} games`);
+    console.log(`📊 API-Sports returned ${games.length} games for ${d}`);
 
     if (games.length === 0) {
       console.warn(`⚠️ No ${leagueType} games found for ${d}`);
@@ -38,32 +32,15 @@ async function getApiSportsData(leagueType, date) {
 
     return games.map((g) => {
       const timestamp = g.game?.date?.timestamp;
-      let isoDate;
-
-      if (timestamp) {
-        // Convert the UTC timestamp to a *local* ISO string
-        const localDate = new Date(timestamp * 1000);
-        // reconstruct an ISO-like string without the trailing “Z”
-        isoDate = `${localDate.getFullYear()}-${String(
-          localDate.getMonth() + 1
-        ).padStart(2, "0")}-${String(localDate.getDate()).padStart(
-          2,
-          "0"
-        )}T${String(localDate.getHours()).padStart(2, "0")}:${String(
-          localDate.getMinutes()
-        ).padStart(2, "0")}:00`;
-      } else {
-        isoDate = `${g.game?.date?.date}T${g.game?.date?.time}:00Z`;
-      }
+      const isoDate = timestamp
+        ? new Date(timestamp * 1000).toISOString()
+        : `${g.game?.date?.date}T${g.game?.date?.time}:00Z`;
 
       return {
-        id: String(
-          g.game?.id ||
-            g.fixture?.id ||
-            g.id ||
-            Math.random().toString(36).slice(2)
-        ),
-        date: isoDate, // <— now includes real kickoff time
+        id:
+          String(g.game?.id || g.fixture?.id || g.id) ||
+          Math.random().toString(36).slice(2),
+        date: isoDate,
         league: leagueType,
         homeTeam: g.teams?.home?.name || "TBD",
         awayTeam: g.teams?.away?.name || "TBD",

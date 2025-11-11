@@ -46,13 +46,16 @@ router.get("/", async (req, res) => {
       `📡 Fetching 7-day schedule for ${league} starting ${startDate}`
     );
 
-    const start = new Date(startDate);
+    // Interpret the incoming startDate as a local YYYY-MM-DD string
+    const [y, m, d] = startDate.split("-").map(Number);
+    const start = new Date(y, m - 1, d, 0, 0, 0);
 
-    // Fetch 7 days (Sun–Sat) in parallel
     const allDays = await Promise.all(
-      Array.from({ length: 7 }).map((_, i) =>
-        getApiSportsData(league, new Date(start.getTime() + i * 86400000))
-      )
+      Array.from({ length: 7 }).map((_, i) => {
+        const next = new Date(Date.UTC(y, m - 1, d + i)); // stay in UTC space
+        const dateStr = next.toISOString().split("T")[0]; // YYYY-MM-DD, UTC-safe
+        return getApiSportsData(league, dateStr);
+      })
     );
 
     // Flatten + remove duplicates
